@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+
+  omniroute:
+    image: ghcr.io/diegosouzapw/omniroute:latest
+    container_name: omniroute
+    restart: unless-stopped
+
+    expose:
+      - "20128"
+
+    volumes:
+      - ./omniroute-cfg/config:/app/config
+      - ./logs/omniroute:/app/logs
+      - ./omniroute-cfg/data:/app/data
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:20128/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    env_file:
+      - .env
+
+    networks:
+      - ai-network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+
+    depends_on:
+      - omniroute
+
+    networks:
+      - ai-network
+
+networks:
+  ai-network:
